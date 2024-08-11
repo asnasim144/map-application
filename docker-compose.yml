@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - nominatim
+      - osrm
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASS=password
+      - DB_NAME=mapping
+
+  db:
+    image: kartoza/postgis:14
+    environment:
+      POSTGRES_DB: mapping
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+
+  nominatim:
+    image: mediagis/nominatim:3.7
+    environment:
+      NOMINATIM_EMAIL: "your-email@example.com"
+      PBF_URL: "https://download.geofabrik.de/europe/monaco-latest.osm.pbf"
+    ports:
+      - "8080:8080"
+
+  osrm:
+    image: osrm/osrm-backend
+    command: osrm-routed --algorithm mld /data/map.osrm
+    volumes:
+      - ./data/osm:/data
+    ports:
+      - "5000:5000"
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - app
