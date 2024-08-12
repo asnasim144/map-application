@@ -47,9 +47,13 @@ app.get('/route', async (req, res) => {
         const response = await axios.get(`${process.env.OSRM_URL}/route/v1/driving/${start};${end}`, {
             params: { overview: 'full', geometries: 'geojson' }
         });
+        
+        console.log("🚀 ~ file: server.js:50 ~ app.get ~ response:", response);
         res.json(response.data);
     } catch (error) {
-        res.status(500).send('Error in routing.');
+
+        console.log("🚀 ~ file: server.js:53 ~ app.get ~ error:", error);
+        res.status(500).send({message: 'Error in routing.'});
     }
 });
 

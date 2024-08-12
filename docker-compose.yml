@@ -15,6 +15,10 @@ services:
       - DB_USER=postgres
       - DB_PASS=password
       - DB_NAME=mapping
+    volumes:    
+      - .:/app  
+      - /app/node_modules
+
 
   db:
     image: kartoza/postgis:14
@@ -28,16 +32,31 @@ services:
   nominatim:
     image: mediagis/nominatim:3.7
     environment:
-      NOMINATIM_EMAIL: "your-email@example.com"
-      PBF_URL: "https://download.geofabrik.de/europe/monaco-latest.osm.pbf"
+      NOMINATIM_EMAIL: "youremail422@gmail.com"
+      PBF_URL: "http://download.geofabrik.de/asia/bangladesh-latest.osm.pbf"
     ports:
       - "8080:8080"
 
-  osrm:
-    image: osrm/osrm-backend
-    command: osrm-routed --algorithm mld /data/map.osrm
+  osrm-prepare:
+    image: osrm/osrm-backend:v5.24.0
     volumes:
-      - ./data/osm:/data
+      - ./data/osm:/data/osm
+    command: >
+      sh -c "
+        osrm-extract -p /opt/car.lua /data/osm/map.osm.pbf &&
+        osrm-partition /data/osm/map.osrm &&
+        osrm-customize /data/osm/map.osrm
+      "
+    depends_on:
+      - db
+    deploy:
+      replicas: 1
+
+  osrm:
+    image: osrm/osrm-backend:v5.24.0
+    command: osrm-routed --algorithm mld /data/osm/map.osrm
+    volumes:
+      - ./data/osm:/data/osm
     ports:
       - "5000:5000"
 
